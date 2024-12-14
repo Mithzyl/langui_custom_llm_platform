@@ -1,6 +1,7 @@
 'use client';
 import React, {useEffect, useState} from 'react';
 import {fetchMessagesByConversationId} from "@/utils/api";
+import MessageList from "@/components/MessageList";
 
 
 function adjustHeight(e: any) {
@@ -9,17 +10,29 @@ function adjustHeight(e: any) {
 }
 
 export default function PromptContainer() {
-    const [text, setText] = useState('');
-    const [messages, setMessages] = useState<any[]>([]);
+    const [text, setText] = useState(''); // # prompt text input
+    const [messages, setMessages] = useState<any[]>([]); // messages from user and AI
+
 
     useEffect(() => {
     const loadMessages = async () => {
-      const fetchedMessages = await fetchMessagesByConversationId("d1520a1c72274eb06b05bdfe74ec7d3d"); // Example conversationId
-      setMessages(fetchedMessages);
+      try {
+        const fetchedMessages = await fetchMessagesByConversationId("49dd31add44f009b991a005fe223c9dd"); // Example conversationId
+          setMessages(fetchedMessages);
+          console.log("fetched messages")
+          // console.log(messages)
+          // return fetchedMessages
+      } catch (error) {
+          console.error("Failed to load messages:", error);
+      }
     };
 
     loadMessages();
   }, []);
+
+  //    useEffect(() => {
+  //   console.log("Updated messages:", messages);
+  // }, [messages]); // Logs whenever `messages` is updated
 
 
   return (
@@ -28,6 +41,7 @@ export default function PromptContainer() {
       <div className="flex-1 overflow-y-auto bg-slate-300 text-sm leading-6 text-slate-900 shadow-md dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7">
         {/* Messages */}
         {/* Example conversation */}
+          <MessageList messages={messages} />
       </div>
       {/* Prompt message input */}
       <form className="flex w-full items-center rounded-b-md border-t border-slate-300 bg-slate-200 p-2 dark:border-slate-700 dark:bg-slate-900">

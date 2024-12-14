@@ -1,5 +1,6 @@
 // /src/components/Message.tsx
 import React from "react";
+import ReactMarkdown from "react-markdown";
 
 interface MessageProps {
   sender: string;
@@ -21,7 +22,7 @@ const Message: React.FC<MessageProps> = ({ sender, content }) => {
             : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-300"
         }`}
       >
-        {content}
+        <ReactMarkdown>{content}</ReactMarkdown>
       </div>
     </div>
   );
