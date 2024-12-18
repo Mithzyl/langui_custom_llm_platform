@@ -23,3 +23,26 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    background-color: rgba(22, 163, 74, 0.1); /* lighter green */
+  }
+  10% {
+    opacity: 1;
+    background-color: rgba(22, 163, 74, 0.2); /* target green */
+  }
+  90% {
+    opacity: 1;
+    background-color: rgba(22, 163, 74, 0.2);
+  }
+  100% {
+    opacity: 0;
+    background-color: rgba(22, 163, 74, 0.1);
+  }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 3s ease-in-out;
+}

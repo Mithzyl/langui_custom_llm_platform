@@ -3,6 +3,8 @@ import React, {useEffect, useState} from 'react';
 import {fetchMessagesByConversationId, sendMessage} from "@/utils/api";
 import MessageList from "@/components/Message/MessageList";
 import {useRouter} from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
+import { useChat } from '@/context/ChatContext';
 
 interface AiResponse {
   message_id: string;
@@ -29,7 +31,12 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
     const [messages, setMessages] = useState<any[]>([]); // messages from user and AI
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [model, setModel] = useState('gpt-4o-mini-2024-07-18');
+    const [showModelList, setShowModelList] = useState(false);
     const router = useRouter();
+    const { addSession } = useChat();
+
+    const models = ['gpt-4o-mini-2024-07-18', 'gpt-3.5-turbo', 'gpt-3'];
 
     useEffect(() => {
     const loadMessages = async () => {
@@ -57,34 +64,69 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
 
     try {
       // Add the user's message to the messages list
-      const userMessage = { sender: 'user', content: text };
-      setMessages([...messages, userMessage]);
+      const userMessage = { message_id: uuidv4(), role: 'user', message: text };
+      setText('');
+      setMessages(prevMessages => {
+        const newMessages = [...prevMessages, userMessage];
+        // console.log("user message: ", userMessage);
+        return newMessages;
+      });
 
       // Send the message to the backend
-      const response = await sendMessage(text, sessionId || null);
+      const response = await sendMessage(text, sessionId || null, model);
       const { conversation_id, ai_response } = response;
 
+
       if (!sessionId && conversation_id) {
-        // If it's a new session, navigate to the new chat page
+        addSession({ session_id: conversation_id, title: text });
         router.push(`/chat/${conversation_id}`);
       } else {
-        // For existing sessions, add the AI response to the messages
-        const aiMessage = { sender: 'assistant', content: ai_response.message };
-        setMessages((prevMessages) => [...prevMessages, aiMessage]);
+        const aiMessage = {message_id: ai_response.message_id, role: 'assistant', message: ai_response.message };
+        setMessages(prevMessages => {
+          const newMessages = [...prevMessages, aiMessage];
+          // console.log("messages after adding ai message: ", newMessages);
+          return newMessages;
+        });
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
       setError(error.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
-      setText('');
     }
   };
 
   return (
     <div className="flex h-[97vh] w-full flex-col">
+      {/* Model Selection */}
+      <div className="flex justify-start p-2">
+        <button
+          onClick={() => setShowModelList(!showModelList)}
+          className="text-blue-600 dark:text-slate-200"
+        >
+          Model
+        </button>
+        {showModelList && (
+          <div className="absolute bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md shadow-lg mt-8">
+            {models.map((modelOption) => (
+              <button
+                key={modelOption}
+                onClick={() => {
+                  setModel(modelOption);
+                  setShowModelList(false);
+                }}
+                className={`block w-full text-left px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-700 ${
+                  model === modelOption ? 'font-bold' : ''
+                }`}
+              >
+                {modelOption}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {/* Prompt Messages */}
-      <div className="flex-1 overflow-y-auto bg-slate-300 text-sm leading-6 text-slate-900 shadow-md dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7">
+      <div className="flex-1 overflow-y-auto bg-slate-300 text-sm leading-6 text-slate-900 dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7">
         <MessageList messages={messages} />
       </div>
       {/* Prompt message input */}
@@ -94,6 +136,7 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
           <button
             className="hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-600 sm:p-2"
             type="button"
+            aria-label="Attach file"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -107,10 +150,8 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
               strokeLinejoin="round"
             >
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M12 5l0 14"></path>
               <path d="M5 12l14 0"></path>
             </svg>
-            <span className="sr-only">Attach file</span>
           </button>
         </div>
         <textarea
@@ -127,9 +168,12 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
         ></textarea>
         <div>
           <button
-            className={`inline-flex hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-600 sm:p-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`inline-flex items-center justify-center hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-600 sm:p-2 transition-colors duration-200 ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             type="submit"
             disabled={loading}
+            aria-label="Send message"
           >
             {loading ? (
               <svg
@@ -171,7 +215,6 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
                     d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"
                   ></path>
                 </svg>
-                <span className="sr-only">Send message</span>
               </>
             )}
           </button>

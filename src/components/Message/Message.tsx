@@ -1,14 +1,16 @@
-// /src/components/Message.tsx
+// /src/components/Message/Message.tsx
+import { resolve } from "node:path/win32";
 import React from "react";
 import ReactMarkdown from "react-markdown";
 
 interface MessageProps {
-  sender: string;
+  role: 'user' | 'assistant';
   content: string;
 }
 
-const Message: React.FC<MessageProps> = ({ sender, content }) => {
-  const isUser = sender === "user";
+const Message: React.FC<MessageProps> = ({ role, content }) => {
+  const isUser = role === 'user';
+
   return (
     <div
       className={`flex px-4 py-2 sm:px-6 ${

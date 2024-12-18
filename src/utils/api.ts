@@ -63,11 +63,13 @@ export const sendMessage = async (
     model,
     temperature,
   };
+  console.log("payload: ", payload);
 
-  const response = await fetch('http://localhost:8000/llm/send_message', {
+  const response = await fetch('http://localhost:8000/llm/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QiLCJzdWIiOiI1IiwiZXhwIjoxNzM2NDkzNzUzfQ.zgXSHG07Ed6L7-t0BRfu2SBH2q5cCtbyZEQK88RA1GQ`,
     },
     body: JSON.stringify(payload),
   });
@@ -90,4 +92,58 @@ export const sendMessage = async (
     conversation_id: conversationIdResponse,
     ai_response: aiResponse,
   };
+};
+
+import Memory from '@/types/Memory';
+import { generateMockMemories } from '@/utils/mockData';
+
+export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> => {
+  try {
+    const response = await fetch(`http://localhost:8000/memory/users/637414fd-6a9e-452e-8468-02adca3c083c`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add any necessary authorization headers
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch memories');
+    }
+
+    const data = await response.json();
+    return data.message; // The memories are in the 'message' field of the response
+  } catch (error) {
+    console.error('Error fetching memories:', error);
+    throw error;
+  }
+};
+
+export const deleteMemory = async (memoryId: string) => {
+  console.log("got delete request ", memoryId);
+  const response = await fetch(`http://localhost:8000/memory/${memoryId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      // Add any necessary authorization headers
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to delete memory');
+  }
+  
+  return response.json();
+};
+
+export const updateMemory = async (userId: string, memoryId: string, data: Partial<Memory>) => {
+  const response = await fetch(`/api/users/${userId}/memories/${memoryId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update memory');
+  return response.json();
 };

@@ -12,7 +12,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex dark:bg-slate-900 dark:text-slate-300">
+    <div className="flex h-screen dark:bg-slate-900 dark:text-slate-300">
       {/* <Sidebar onSessionSelect={handleSessionSelect} /> */}
       <main className="flex-1">
         {selectedSessionId ? (
