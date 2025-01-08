@@ -1,6 +1,6 @@
 'use client';
 import React, {useEffect, useState} from 'react';
-import {fetchMessagesByConversationId, sendMessage} from "@/utils/api";
+import {fetchMessagesByConversationId, sendStreamMessage} from "@/utils/api";
 import MessageList from "@/components/Message/MessageList";
 import {useRouter} from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,27 +67,33 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
       const userMessage = { message_id: uuidv4(), role: 'user', message: text };
       setText('');
       setMessages(prevMessages => {
-        const newMessages = [...prevMessages, userMessage];
-        // console.log("user message: ", userMessage);
-        return newMessages;
+        const updatedMessages = [...prevMessages, userMessage];
+        
+        // Create a placeholder for the AI message
+        const aiMessage = { message_id: uuidv4(), role: 'assistant', message: '' };
+        updatedMessages.push(aiMessage); // Append the AI message placeholder
+        
+        return updatedMessages;
       });
 
-      // Send the message to the backend
-      const response = await sendMessage(text, sessionId || null, model);
-      const { conversation_id, ai_response } = response;
-
-
-      if (!sessionId && conversation_id) {
-        addSession({ session_id: conversation_id, title: text });
-        router.push(`/chat/${conversation_id}`);
-      } else {
-        const aiMessage = {message_id: ai_response.message_id, role: 'assistant', message: ai_response.message };
+      // Send the message to the backend and handle streaming
+      await sendStreamMessage(text, sessionId || null, model, 0.9, (newMessage) => {
+        
+        // Update the existing AI message with the new streamed text
         setMessages(prevMessages => {
-          const newMessages = [...prevMessages, aiMessage];
-          // console.log("messages after adding ai message: ", newMessages);
-          return newMessages;
+          const updatedMessages = [...prevMessages];
+          const lastMessageIndex = updatedMessages.length - 1;
+          const lastMessage = updatedMessages[lastMessageIndex].message;
+          const newContent = newMessage;
+          
+          // Check if the new content is a continuation or duplicate
+          if (!lastMessage.endsWith(newContent)) {
+            updatedMessages[lastMessageIndex].message += newContent;
+          }
+          
+          return updatedMessages;
         });
-      }
+      });
     } catch (error: any) {
       console.error('Error sending message:', error);
       setError(error.message || 'An unexpected error occurred.');

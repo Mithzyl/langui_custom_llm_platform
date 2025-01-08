@@ -1,5 +1,8 @@
 // /src/utils/api.ts
+import { getAuthToken } from './auth';
+
 export const fetchMessagesByConversationId = async (conversationId: string) => {
+  
   const response = await fetch(`http://localhost:8000/llm/${conversationId}`);
   if (!response.ok) throw new Error("Failed to fetch messages");
   const data = await response.json();
@@ -65,11 +68,16 @@ export const sendMessage = async (
   };
   console.log("payload: ", payload);
 
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   const response = await fetch('http://localhost:8000/llm/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QiLCJzdWIiOiI1IiwiZXhwIjoxNzM2NDkzNzUzfQ.zgXSHG07Ed6L7-t0BRfu2SBH2q5cCtbyZEQK88RA1GQ`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
@@ -96,6 +104,7 @@ export const sendMessage = async (
 
 import Memory from '@/types/Memory';
 import { generateMockMemories } from '@/utils/mockData';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> => {
   try {
@@ -113,6 +122,27 @@ export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> =
 
     const data = await response.json();
     return data.message; // The memories are in the 'message' field of the response
+  } catch (error) {
+    console.error('Error fetching memories:', error);
+    throw error;
+  }
+};
+
+export const fetchMemoriesByConversationId = async (conversationId: string): Promise<Memory[]> => {
+  try {
+    const response = await fetch(`http://localhost:8000/memory/conversation/${conversationId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch memories');
+    }
+
+    const data = await response.json();
+    return data.message;
   } catch (error) {
     console.error('Error fetching memories:', error);
     throw error;
@@ -137,7 +167,8 @@ export const deleteMemory = async (memoryId: string) => {
 };
 
 export const updateMemory = async (userId: string, memoryId: string, data: Partial<Memory>) => {
-  const response = await fetch(`/api/users/${userId}/memories/${memoryId}`, {
+  console.log("got update request ", memoryId);
+  const response = await fetch(`http://localhost:8000/memory/${memoryId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -147,3 +178,43 @@ export const updateMemory = async (userId: string, memoryId: string, data: Parti
   if (!response.ok) throw new Error('Failed to update memory');
   return response.json();
 };
+
+export const sendStreamMessage = async (
+  message: string,
+  conversationId: string | null,
+  model: string = "gpt-4o-mini-2024-07-18",
+  temperature: number = 0.9,
+  onMessageReceived: (msg: string) => void // New callback parameter
+): Promise<void> => { // Change return type to void
+  const payload = {
+    message,
+    conversation_id: conversationId,
+    model,
+    temperature,
+  };
+
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  await fetchEventSource('http://localhost:8000/llm/stream_chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+    async onmessage(ev) {
+      let data = ev.data;
+      if (data.length == 0) {
+        data += "\n";
+      }
+      console.log("streaming", data);
+      onMessageReceived(data);
+    }
+    
+  });
+
+  
+}
