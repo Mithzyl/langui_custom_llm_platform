@@ -18,6 +18,14 @@ export const fetchSessionsByUserId = async (userId: string) => {
   return data.message || [];
 };
 
+export const fetchSessionByConversationId = async (conversationId: string) => {
+  const response = await fetch(`http://localhost:8000/llm/conversation/${conversationId}`)
+  if (!response.ok) throw new Error("Failed to fetch sessions");
+  const data = await response.json();
+
+  return data.message;
+}
+
 export const fetchUserId = async (token: string) => {
   const response = await fetch('http://localhost:8000/users/me', {
     method: 'GET',
