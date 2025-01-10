@@ -105,6 +105,7 @@ export const sendMessage = async (
 import Memory from '@/types/Memory';
 import { generateMockMemories } from '@/utils/mockData';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { generateMd5Id } from './idUtils';
 
 export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> => {
   try {
@@ -186,6 +187,9 @@ export const sendStreamMessage = async (
   temperature: number = 0.9,
   onMessageReceived: (msg: string) => void // New callback parameter
 ): Promise<void> => { // Change return type to void
+  if (!conversationId) {
+    conversationId = generateMd5Id();
+  }
   const payload = {
     message,
     conversation_id: conversationId,
@@ -210,7 +214,7 @@ export const sendStreamMessage = async (
       if (data.length == 0) {
         data += "\n";
       }
-      console.log("streaming", data);
+      // console.log("streaming", data);
       onMessageReceived(data);
     }
     

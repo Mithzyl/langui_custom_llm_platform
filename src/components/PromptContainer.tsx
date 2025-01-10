@@ -4,7 +4,7 @@ import {fetchMessagesByConversationId, sendStreamMessage} from "@/utils/api";
 import MessageList from "@/components/Message/MessageList";
 import {useRouter} from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { useChat } from '@/context/ChatContext';
+import { useChat } from "@/context/ChatContext";
 
 interface AiResponse {
   message_id: string;
@@ -34,26 +34,42 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
     const [model, setModel] = useState('gpt-4o-mini-2024-07-18');
     const [showModelList, setShowModelList] = useState(false);
     const router = useRouter();
-    const { addSession } = useChat();
+    const { getContextMessage } = useChat();
 
     const models = ['gpt-4o-mini-2024-07-18', 'gpt-3.5-turbo', 'gpt-3'];
 
+
+    const hasFetched = React.useRef(false);
+
     useEffect(() => {
-    const loadMessages = async () => {
-      if (!sessionId) return;
+      if (!sessionId || hasFetched.current) return;
+      
+      hasFetched.current = true;
+      
+      const loadMessages = async () => {
+        try {
+          // Load stored messages for existing session
+          console.log("fetching messages for sessionId: ", sessionId);
+          let fetchedMessages = await fetchMessagesByConversationId(sessionId);
+          if (fetchedMessages.length === 0) {
+            // Load messages from context
+            fetchedMessages = getContextMessage();
+            console.log("New conversation , try to fetch context message", fetchedMessages);
+          }
 
-      try {
-        console.log("fetching messages for sessionId: ", sessionId);
-        const fetchedMessages = await fetchMessagesByConversationId(sessionId);
-        setMessages(fetchedMessages);
-        console.log("fetched messages ", fetchedMessages);
-      } catch (error) {
-        console.error("Failed to load messages:", error);
-      }
-    };
+          setMessages(fetchedMessages);
+          console.log("fetched messages ", fetchedMessages);
+        } catch (error) {
+          console.error("Failed to load messages:", error);
+        }
+      };
 
-    loadMessages();
-  }, [sessionId]);
+      loadMessages();
+
+      return () => {
+        hasFetched.current = false;
+      };
+    }, [sessionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
