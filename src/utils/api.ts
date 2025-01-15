@@ -1,9 +1,10 @@
 // /src/utils/api.ts
 import { getAuthToken } from './auth';
+import { config } from '@/config/config';
 
 export const fetchMessagesByConversationId = async (conversationId: string) => {
   
-  const response = await fetch(`http://localhost:8000/llm/${conversationId}`);
+  const response = await fetch(`${config.backendUrl}/llm/${conversationId}`);
   if (!response.ok) throw new Error("Failed to fetch messages");
   const data = await response.json();
 
@@ -11,7 +12,7 @@ export const fetchMessagesByConversationId = async (conversationId: string) => {
 };
 
 export const fetchSessionsByUserId = async (userId: string) => {
-  const response = await fetch(`http://localhost:8000/llm/${userId}/sessions/`);
+  const response = await fetch(`${config.backendUrl}/llm/${userId}/sessions/`);
   if (!response.ok) throw new Error("Failed to fetch sessions");
   const data = await response.json();
 
@@ -19,7 +20,7 @@ export const fetchSessionsByUserId = async (userId: string) => {
 };
 
 export const fetchSessionByConversationId = async (conversationId: string) => {
-  const response = await fetch(`http://localhost:8000/llm/conversation/${conversationId}`)
+  const response = await fetch(`${config.backendUrl}/llm/conversation/${conversationId}`)
   if (!response.ok) throw new Error("Failed to fetch sessions");
   const data = await response.json();
 
@@ -27,7 +28,7 @@ export const fetchSessionByConversationId = async (conversationId: string) => {
 }
 
 export const fetchUserId = async (token: string) => {
-  const response = await fetch('http://localhost:8000/users/me', {
+  const response = await fetch(`${config.backendUrl}/users/me`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -81,7 +82,7 @@ export const sendMessage = async (
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('http://localhost:8000/llm/chat', {
+  const response = await fetch(`${config.backendUrl}/llm/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ import { generateMd5Id } from './idUtils';
 
 export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/memory/users/637414fd-6a9e-452e-8468-02adca3c083c`, {
+    const response = await fetch(`${config.backendUrl}/memory/users/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -139,7 +140,7 @@ export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> =
 
 export const fetchMemoriesByConversationId = async (conversationId: string): Promise<Memory[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/memory/conversation/${conversationId}`, {
+    const response = await fetch(`${config.backendUrl}/memory/conversation/${conversationId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -160,7 +161,7 @@ export const fetchMemoriesByConversationId = async (conversationId: string): Pro
 
 export const deleteMemory = async (memoryId: string) => {
   console.log("got delete request ", memoryId);
-  const response = await fetch(`http://localhost:8000/memory/${memoryId}`, {
+  const response = await fetch(`${config.backendUrl}/memory/${memoryId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ export const deleteMemory = async (memoryId: string) => {
 
 export const updateMemory = async (userId: string, memoryId: string, data: Partial<Memory>) => {
   console.log("got update request ", memoryId);
-  const response = await fetch(`http://localhost:8000/memory/${memoryId}`, {
+  const response = await fetch(`${config.backendUrl}/memory/${memoryId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -210,7 +211,7 @@ export const sendStreamMessage = async (
     throw new Error('No authentication token found');
   }
 
-  await fetchEventSource('http://localhost:8000/llm/stream_chat', {
+  await fetchEventSource(`${config.backendUrl}/llm/stream_chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
