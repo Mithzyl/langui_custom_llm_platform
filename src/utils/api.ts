@@ -3,24 +3,50 @@ import { getAuthToken } from './auth';
 import { config } from '@/config/config';
 
 export const fetchMessagesByConversationId = async (conversationId: string) => {
-  
-  const response = await fetch(`${config.backendUrl}/llm/${conversationId}`);
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await fetch(`${config.backendUrl}/llm/${conversationId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
   if (!response.ok) throw new Error("Failed to fetch messages");
   const data = await response.json();
 
-  return data.message || [];
+  return data || [];
 };
 
 export const fetchSessionsByUserId = async (userId: string) => {
-  const response = await fetch(`${config.backendUrl}/llm/${userId}/sessions/`);
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await fetch(`${config.backendUrl}/llm/${userId}/sessions/`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
   if (!response.ok) throw new Error("Failed to fetch sessions");
   const data = await response.json();
 
-  return data.message || [];
+  return data || [];
 };
 
 export const fetchSessionByConversationId = async (conversationId: string) => {
-  const response = await fetch(`${config.backendUrl}/llm/conversation/${conversationId}`)
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await fetch(`${config.backendUrl}/llm/conversation/${conversationId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
   if (!response.ok) throw new Error("Failed to fetch sessions");
   const data = await response.json();
 
@@ -37,8 +63,9 @@ export const fetchUserId = async (token: string) => {
 
   if (!response.ok) throw new Error("Failed to fetch user ID");
   const data = await response.json();
+  console.log(data);
 
-  return data.message.userid; // Assuming the user ID is returned in this format
+  return data.userid; // Assuming the user ID is returned in this format
 };
 
 /**
@@ -118,11 +145,16 @@ import { generateMd5Id } from './idUtils';
 
 export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> => {
   try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
     const response = await fetch(`${config.backendUrl}/memory/users/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Add any necessary authorization headers
+        'Authorization': `Bearer ${token}`,
       },
     });
 
@@ -140,10 +172,16 @@ export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> =
 
 export const fetchMemoriesByConversationId = async (conversationId: string): Promise<Memory[]> => {
   try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
     const response = await fetch(`${config.backendUrl}/memory/conversation/${conversationId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
 
@@ -161,11 +199,16 @@ export const fetchMemoriesByConversationId = async (conversationId: string): Pro
 
 export const deleteMemory = async (memoryId: string) => {
   console.log("got delete request ", memoryId);
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   const response = await fetch(`${config.backendUrl}/memory/${memoryId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      // Add any necessary authorization headers
+      'Authorization': `Bearer ${token}`,
     },
   });
   
@@ -178,10 +221,16 @@ export const deleteMemory = async (memoryId: string) => {
 
 export const updateMemory = async (userId: string, memoryId: string, data: Partial<Memory>) => {
   console.log("got update request ", memoryId);
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   const response = await fetch(`${config.backendUrl}/memory/${memoryId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });

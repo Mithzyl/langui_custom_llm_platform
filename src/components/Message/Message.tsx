@@ -19,15 +19,15 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
     >
       {!isUser && (
         <img
-          className="mr-2 h-8 w-8 rounded-full"
+          className="mr-3 h-8 w-8 rounded-full"
           src="https://dummyimage.com/128x128/354ea1/ffffff&text=AI"
           alt="AI Avatar"
         />
       )}
       <div
-        className={`rounded-lg px-4 py-2 ${
+        className={`px-4 py-3 ${
           isUser
-            ? "bg-blue-500 text-white"
+            ? "bg-blue-600 text-white"
             : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-300"
         }`}
       >

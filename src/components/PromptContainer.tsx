@@ -33,6 +33,7 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
     const [loading, setLoading] = useState(false);
     const [model, setModel] = useState('gpt-4o-mini-2024-07-18');
     const [showModelList, setShowModelList] = useState(false);
+    const [webSearchEnabled, setWebSearchEnabled] = useState(false); // 新增联网搜索状态
     const router = useRouter();
     const { getContextMessage } = useChat();
 
@@ -93,23 +94,7 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
       });
 
       // Send the message to the backend and handle streaming
-      await sendStreamMessage(text, sessionId || null, model, 0.9, (newMessage) => {
-        
-        // Update the existing AI message with the new streamed text
-        setMessages(prevMessages => {
-          const updatedMessages = [...prevMessages];
-          const lastMessageIndex = updatedMessages.length - 1;
-          const lastMessage = updatedMessages[lastMessageIndex].message;
-          const newContent = newMessage;
-          
-          // Check if the new content is a continuation or duplicate
-          if (!lastMessage.endsWith(newContent)) {
-            updatedMessages[lastMessageIndex].message += newContent;
-          }
-          
-          return updatedMessages;
-        });
-      });
+      await sendStreamMessage(text, sessionId || null, model, 0.9, (msg: string) => { /* no-op */ });
     } catch (error: any) {
       console.error('Error sending message:', error);
       setError(error.message || 'An unexpected error occurred.');
@@ -119,41 +104,52 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
   };
 
   return (
-    <div className="flex h-[97vh] w-full flex-col">
-      {/* Model Selection */}
-      <div className="flex justify-start p-2">
-        <button
-          onClick={() => setShowModelList(!showModelList)}
-          className="text-blue-600 dark:text-slate-200"
-        >
-          Model
-        </button>
-        {showModelList && (
-          <div className="absolute bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md shadow-lg mt-8">
-            {models.map((modelOption) => (
-              <button
-                key={modelOption}
-                onClick={() => {
-                  setModel(modelOption);
-                  setShowModelList(false);
-                }}
-                className={`block w-full text-left px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-700 ${
-                  model === modelOption ? 'font-bold' : ''
-                }`}
-              >
-                {modelOption}
-              </button>
-            ))}
+    <div className="flex flex-col h-[calc(100svh-1rem)] sm:h-[calc(100vh-1rem)] w-full overflow-hidden">
+      {/* Navigation Bar - Model and Search Settings */}
+      <div className="flex justify-between items-center p-2 bg-slate-100 dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700">
+        <div className="flex items-center space-x-4">
+          <span className="font-medium text-slate-700 dark:text-slate-300">Model Settings</span>
+          <div className="relative">
+            <button
+              onClick={() => setShowModelList(!showModelList)}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+            >
+              {model}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showModelList && (
+              <div className="absolute z-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md shadow-lg mt-2">
+                {models.map((modelOption) => (
+                  <button
+                    key={modelOption}
+                    onClick={() => {
+                      setModel(modelOption);
+                      setShowModelList(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-700 ${
+                      model === modelOption ? 'font-bold text-blue-600 dark:text-blue-400' : ''
+                    }`}
+                  >
+                    {modelOption}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-      {/* Prompt Messages */}
-      <div className="flex-1 overflow-y-auto bg-slate-300 text-sm leading-6 text-slate-900 dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7">
+      
+      {/* Message List */}
+      <div className="flex-1 overflow-y-auto">
         <MessageList messages={messages} />
       </div>
+      
       {/* Prompt message input */}
-      <form onSubmit={handleSubmit} className="flex w-full items-center rounded-md bg-slate-200 p-2 dark:bg-slate-900">
+      <form onSubmit={handleSubmit} className="flex w-full items-center bg-slate-200 p-4 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700">
         <label htmlFor="prompt" className="sr-only">Enter your prompt</label>
+        {/* Attach file button */}
         <div>
           <button
             className="hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-600 sm:p-2"
@@ -176,10 +172,28 @@ const PromptContainer: React.FC<PromptContainerProps> = ({sessionId}) => {
             </svg>
           </button>
         </div>
+        <div className="relative">
+          <button
+            type="button"
+            className={`hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-600 sm:p-2 transition-colors duration-200 ${
+              webSearchEnabled ? 'text-blue-600 dark:text-blue-400' : ''
+            }`}
+            onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+            aria-label="Web search"
+            title="启用联网搜索"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {webSearchEnabled && (
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+            )}
+          </button>
+        </div>
         <textarea
           id="prompt"
           rows={1}
-          className="mx-2 flex min-h-full w-full rounded-md border border-slate-300 bg-slate-200 p-2 text-base text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-300/20 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-400 dark:focus:border-blue-600 dark:focus:ring-blue-600"
+          className="mx-2 flex min-h-full w-full border border-slate-300 bg-transparent p-2 text-base text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-300/20 dark:bg-transparent dark:text-slate-200 dark:placeholder-slate-400 dark:focus:border-blue-600 dark:focus:ring-blue-600"
           placeholder="Enter your prompt"
           value={text}
           onChange={(e) => {
