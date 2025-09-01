@@ -163,7 +163,7 @@ export const fetchMemoriesByUserId = async (userId: string): Promise<Memory[]> =
     }
 
     const data = await response.json();
-    return data.message; // The memories are in the 'message' field of the response
+    return data;
   } catch (error) {
     console.error('Error fetching memories:', error);
     throw error;
@@ -190,7 +190,7 @@ export const fetchMemoriesByConversationId = async (conversationId: string): Pro
     }
 
     const data = await response.json();
-    return data.message;
+    return data;
   } catch (error) {
     console.error('Error fetching memories:', error);
     throw error;
@@ -243,8 +243,9 @@ export const sendStreamMessage = async (
   conversationId: string | null,
   model: string = "gpt-4o-mini-2024-07-18",
   temperature: number = 0.9,
-  onMessageReceived: (msg: string) => void // New callback parameter
-): Promise<void> => { // Change return type to void
+  webSearchEnabled: boolean = false,
+  onMessageReceived: (msg: string) => void
+): Promise<void> => {
   if (!conversationId) {
     conversationId = generateMd5Id();
   }
@@ -253,6 +254,7 @@ export const sendStreamMessage = async (
     conversation_id: conversationId,
     model,
     temperature,
+    web_search_enabled: webSearchEnabled,
   };
 
   const token = getAuthToken();
