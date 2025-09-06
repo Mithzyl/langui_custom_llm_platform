@@ -2,6 +2,23 @@
 import { getAuthToken } from './auth';
 import { config } from '@/config/config';
 
+export const fetchModels = async () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await fetch(`${config.backendUrl}/llm/models`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error("Failed to fetch models");
+  const data = await response.json();
+
+  return data || [];
+};
+
 export const fetchMessagesByConversationId = async (conversationId: string) => {
   const token = getAuthToken();
   if (!token) {

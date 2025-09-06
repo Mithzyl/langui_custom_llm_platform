@@ -1,10 +1,11 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchMessagesByConversationId, sendStreamMessage } from "@/utils/api";
+import { fetchMessagesByConversationId, fetchModels, sendStreamMessage } from "@/utils/api";
 import MessageList from "@/components/Message/MessageList";
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { useChat } from "@/context/ChatContext";
+import { getAuthToken } from '@/utils/auth';
 
 interface PromptContainerProps {
   sessionId?: string;
@@ -16,19 +17,38 @@ const PromptContainer: React.FC<PromptContainerProps> = ({ sessionId }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState('gpt-4o-mini-2024-07-18');
+  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const router = useRouter();
   const { getContextMessage } = useChat();
   const modelSelectorRef = useRef<HTMLDivElement>(null);
 
-  const models = [
-    { id: "gpt-4o-mini-2024-07-18", name: "GPT-4o Mini" },
-    { id: "gpt-4o-2024-05-13", name: "GPT-4o" },
-    { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet" },
-  ];
-
   const hasFetched = React.useRef(false);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) {
+      router.push('/login');
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const fetchedModels = await fetchModels();
+        if (Array.isArray(fetchedModels)) {
+          setModels(fetchedModels);
+        } else {
+          console.error("Fetched models is not an array:", fetchedModels);
+        }
+      } catch (error) {
+        console.error("Failed to load models:", error);
+      }
+    };
+
+    loadModels();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
