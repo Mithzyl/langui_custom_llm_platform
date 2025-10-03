@@ -1,15 +1,22 @@
 import { config } from "@/config/config";
 
 export const setAuthToken = (token: string) => {
-  localStorage.setItem('authToken', token);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('authToken', token);
+  }
 };
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('authToken');
+  }
+  return null;
 };
 
 export const clearAuthToken = () => {
-  localStorage.removeItem('authToken');
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('authToken');
+  }
 };
 
 export const login = async (email: string, password: string): Promise<any> => {

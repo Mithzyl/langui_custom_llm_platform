@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSessionSelect }) => {
         </div>
         {/* Previous chats container */}
         <div className="flex-grow space-y-2 overflow-y-auto px-2 py-4 border-t border-slate-200 dark:border-slate-700">
-          {sessions.map((session: Session) => (
+          {sessions && sessions.filter(session => session && session.session_id).map((session: Session) => (
             <SidebarItem
               key={session.session_id}
               sessionId={session.session_id}

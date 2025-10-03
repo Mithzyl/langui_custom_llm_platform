@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchModels, fetchSessionByConversationId, sendStreamMessage } from '@/utils/api';
+import { fetchModels, sendStreamMessage } from '@/services/api/chatService';
+import { fetchSessionByConversationId } from '@/services/api/sessionService';
 import { generateMd5Id } from '@/utils/idUtils';
 import { useChat } from '@/context/ChatContext';
 import Sidebar from '@/components/Sidebar/Sidebar';
@@ -76,7 +77,7 @@ const DefaultPage: React.FC = () => {
       const userMessage = {
         message_id: generateMd5Id(),
         message: text,
-        role: 'user',
+        role: 'user' as const,
         timestamp: Date.now()
       };
       addContextMessage(conversationId, userMessage);
@@ -85,7 +86,7 @@ const DefaultPage: React.FC = () => {
       const aiMessage = {
         message_id: generateMd5Id(),
         message: '',
-        role: 'assistant',
+        role: 'assistant' as const,
         timestamp: Date.now()
       };
       addContextMessage(conversationId, aiMessage);

@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchMessagesByConversationId, fetchModels, sendStreamMessage } from "@/utils/api";
+import { fetchMessagesByConversationId, fetchModels, sendStreamMessage } from "@/services/api/chatService";
 import MessageList from "@/components/Message/MessageList";
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { useChat } from "@/context/ChatContext";
-import { getAuthToken } from '@/utils/auth';
+import { useAuth } from "@/context/AuthContext";
+import useSWR from 'swr';
 
 interface PromptContainerProps {
   sessionId?: string;
@@ -21,17 +21,19 @@ const PromptContainer: React.FC<PromptContainerProps> = ({ sessionId }) => {
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const router = useRouter();
-  const { getContextMessage } = useChat();
+  const { isAuthenticated } = useAuth();
   const modelSelectorRef = useRef<HTMLDivElement>(null);
 
-  const hasFetched = React.useRef(false);
+  const { data: initialMessages, error: messagesError } = useSWR(
+    sessionId ? `messages/${sessionId}` : null,
+    () => fetchMessagesByConversationId(sessionId!)
+  );
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
+    if (!isAuthenticated) {
       router.push('/login');
     }
-  }, [router]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -64,28 +66,17 @@ const PromptContainer: React.FC<PromptContainerProps> = ({ sessionId }) => {
   }, []);
 
   useEffect(() => {
-    if (!sessionId || hasFetched.current) return;
-    
-    hasFetched.current = true;
-    
-    const loadMessages = async () => {
-      try {
-        let fetchedMessages = await fetchMessagesByConversationId(sessionId);
-        if (fetchedMessages.length === 0) {
-          fetchedMessages = getContextMessage();
-        }
-        setMessages(fetchedMessages);
-      } catch (error) {
-        console.error("Failed to load messages:", error);
-      }
-    };
+    if (initialMessages) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
-    loadMessages();
-
-    return () => {
-      hasFetched.current = false;
-    };
-  }, [sessionId, getContextMessage]);
+  useEffect(() => {
+    if (messagesError) {
+      console.error("Failed to load messages:", messagesError);
+      setError("Failed to load messages.");
+    }
+  }, [messagesError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

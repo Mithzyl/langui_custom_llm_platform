@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar/Sidebar";
+import { AuthProvider } from "@/context/AuthContext";
+import { SessionProvider } from "@/context/SessionContext";
 import { ChatProvider } from "@/context/ChatContext";
 
 const geistSans = localFont({
@@ -32,12 +34,16 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <ChatProvider>
-          <div className="flex dark:bg-slate-900 dark:text-slate-300">
-            {/* <Sidebar /> */}
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
+          <AuthProvider>
+            <SessionProvider>
+              <div className="flex dark:bg-slate-900 dark:text-slate-300">
+                {/* <Sidebar /> */}
+                <main className="flex-1">
+                  {children}
+                </main>
+              </div>
+            </SessionProvider>
+          </AuthProvider>
         </ChatProvider>
       </body>
     </html>

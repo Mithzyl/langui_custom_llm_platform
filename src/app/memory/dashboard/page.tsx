@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { fetchMemoriesByUserId, fetchMemoriesByConversationId, deleteMemory, updateMemory, fetchUserId } from '@/utils/api';
+import { fetchMemoriesByUserId, fetchMemoriesByConversationId, deleteMemory, updateMemory } from '@/services/api/memoryService';
+import { fetchUserId } from '@/services/api/userService';
 import { getAuthToken } from '@/utils/auth';
 import MemoryItem from '@/components/Memory/MemoryItem';
 import Memory from '@/types/Memory';
@@ -41,7 +42,7 @@ export default function MemoryDashboard() {
         if (!token) {
           throw new Error('No authentication token found');
         }
-        const userId = await fetchUserId(token);
+        const userId = await fetchUserId();
         const conversationId = "your-conversation-id"; // Placeholder
 
         const [userMemoriesResult, conversationMemoriesResult] = await Promise.allSettled([
@@ -110,7 +111,7 @@ export default function MemoryDashboard() {
     if (!currentMemory) return;
 
     try {
-      await updateMemory(currentMemory.user_id, currentMemory.id, updatedMemory);
+      await updateMemory(currentMemory.id, updatedMemory);
       const newMemories = memories.map(mem => mem.id === currentMemory.id ? { ...mem, ...updatedMemory } : mem);
       setMemories(newMemories);
       if (activeTab === 'user') {
